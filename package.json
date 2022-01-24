@@ -12,12 +12,15 @@
   "author": "skiran017",
   "license": "ISC",
   "dependencies": {
+    "@openzeppelin/contracts": "^4.4.2",
+    "@openzeppelin/test-helpers": "^0.5.4",
     "bootstrap": "^4.4.1",
+    "moment": "^2.29.1",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
+    "react-moment": "^1.1.1",
     "react-scripts": "^3.2.0",
-    "@openzeppelin/contracts": "^4.4.2",
-    "@openzeppelin/test-helpers": "^0.5.4"
+    "web3": "^1.7.0"
   },
   "eslintConfig": {
     "extends": "react-app"
