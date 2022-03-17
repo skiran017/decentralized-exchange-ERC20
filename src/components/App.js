@@ -5,6 +5,7 @@ import NewOrder from './NewOrder.js';
 import Wallet from './Wallet.js';
 import AllOrders from './AllOrders.js';
 import MyOrders from './MyOrders.js';
+import AllTrades from './AllTrades.js';
 
 const SIDE = {
   BUY: 0,
@@ -25,6 +26,8 @@ function App({ web3, accounts, contracts }) {
     buy: [],
     sell: [],
   });
+  const [trades, setTrades] = useState([]);
+  const [listener, setListener] = useState(undefined);
 
   const getBalances = async (account, token) => {
     const tokenDex = await contracts.dex.methods
@@ -46,6 +49,22 @@ function App({ web3, accounts, contracts }) {
         .call(),
     ]);
     return { buy: orders[0], sell: orders[1] };
+  };
+
+  const listenToTrades = (token) => {
+    const tradeIds = new Set();
+    setTrades([]);
+    const listener = contracts.dex.events
+      .NewTrade({
+        filter: { ticker: web3.utils.fromAscii(token.ticker) },
+        fromBlock: 0,
+      })
+      .on('data', (newTrade) => {
+        if (tradeIds.has(newTrade.returnValues.tradeId)) return;
+        tradeIds.add(newTrade.returnValues.tradeId);
+        setTrades((trades) => [...trades, newTrade.returnValues]);
+      });
+    setListener(listener);
   };
 
   const selectToken = (token) => {
@@ -107,6 +126,7 @@ function App({ web3, accounts, contracts }) {
         getBalances(accounts[0], tokens[0]),
         getOrders(tokens[0]),
       ]);
+      listenToTrades(tokens[0]);
       setTokens(tokens);
       setUser({ accounts, balances, selectedToken: tokens[0] });
       setOrders(orders);
@@ -114,19 +134,26 @@ function App({ web3, accounts, contracts }) {
     init();
   }, []);
 
-  useEffect(() => {
-    const init = async () => {
-      const [balances, orders] = await Promise.all([
-        getBalances(accounts[0], user.selectedToken),
-        getOrders(user.selectedToken),
-      ]);
-      setUser((user) => ({ ...user, balances }));
-      setOrders(orders);
-    };
-    if (typeof user.selectedToken !== 'undefined') {
-      init();
+  useEffect(
+    () => {
+      const init = async () => {
+        const [balances, orders] = await Promise.all([
+          getBalances(accounts[0], user.selectedToken),
+          getOrders(user.selectedToken),
+        ]);
+        listenToTrades(user.selectedToken);
+        setUser((user) => ({ ...user, balances }));
+        setOrders(orders);
+      };
+      if (typeof user.selectedToken !== 'undefined') {
+        init();
+      }
+    },
+    [user.selectedToken],
+    () => {
+      listener.unsubscribe();
     }
-  }, [user.selectedToken]);
+  );
 
   if (typeof user.selectedToken === 'undefined') {
     return <div>Loading...</div>;
@@ -153,6 +180,7 @@ function App({ web3, accounts, contracts }) {
           </div>
           {user.selectedToken.ticker !== 'DAI' ? (
             <div className="col-sm-8">
+              <AllTrades trades={trades} />
               <AllOrders orders={orders} />
               <MyOrders
                 orders={{
