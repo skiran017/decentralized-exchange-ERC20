@@ -14,6 +14,7 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.4.2",
     "@openzeppelin/test-helpers": "^0.5.4",
+    "@truffle/hdwallet-provider": "^2.0.4",
     "bootstrap": "^4.4.1",
     "moment": "^2.29.1",
     "react": "^16.11.0",
